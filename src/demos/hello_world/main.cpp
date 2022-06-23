@@ -5,10 +5,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <learnopengl/filesystem.h>
-#include <learnopengl/shader_m.h>
-#include <learnopengl/camera.h>
-#include <learnopengl/model.h>
+#include <core/filesystem.h>
+#include <core/shader_m.h>
+#include <core/camera.h>
+#include <core/model.h>
 
 #include <iostream>
 #include <cmath>

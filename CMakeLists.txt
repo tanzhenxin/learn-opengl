@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.0)
 cmake_policy(VERSION 3.0)
 
-project(OpenGLDemos)
+project(learn-opengl)
 
 set(CMAKE_CXX_STANDARD 17) # this does nothing for MSVC, use target_compile_options below
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -42,22 +42,51 @@ SET(APPLE_LIBS ${APPLE_LIBS} ${GLFW3_LIBRARY} ${ASSIMP_LIBRARY} ${FREETYPE_LIBRA
 set(LIBS ${LIBS} ${APPLE_LIBS})
 
 set(DEMOS
-    hello_world
-    rasterizer
+   hello_world
+   rasterizer
+   mesh_edit
 )
 
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
 include_directories(${CMAKE_BINARY_DIR}/configuration)
 
-configure_file(includes/assimp/config.h.in includes/assimp/config.h)
-include_directories(${CMAKE_BINARY_DIR}/includes)
-
 # first create relevant static libraries requried for other projects
-add_library(STB_IMAGE "src/stb_image.cpp")
-set(LIBS ${LIBS} STB_IMAGE)
+FILE (GLOB LIB_CORE
+  src/core/*.h
+  src/render/*.h
+  src/render/*.cpp
+)
+FILE (GLOB LIB_EXT
+  src/ext/GLFW/*
+  src/ext/KHR/*
+  src/ext/assimp/*
+  src/ext/glad/*
+  src/ext/glm/*
+)
+SET (LIB_EXT_STB
+  src/ext/stb/stb_image.h
+  src/ext/stb/stb_image.cpp
+)
 
-add_library(GLAD "src/glad.c")
-set(LIBS ${LIBS} GLAD)
+SOURCE_GROUP (core REGULAR_EXPRESSION src/core/.*)
+SOURCE_GROUP (render REGULAR_EXPRESSION src/render/.*)
+SOURCE_GROUP (ext REGULAR_EXPRESSION src/ext/.*)
+SOURCE_GROUP (ext/GLFW REGULAR_EXPRESSION src/ext/GLFW/.*)
+SOURCE_GROUP (ext/KHR REGULAR_EXPRESSION src/ext/KHR.*)
+SOURCE_GROUP (ext/assimp REGULAR_EXPRESSION src/ext/assimp/.*)
+SOURCE_GROUP (ext/glad REGULAR_EXPRESSION src/ext/glad.*)
+SOURCE_GROUP (ext/glm REGULAR_EXPRESSION src/ext/glm.*)
+SOURCE_GROUP (ext/stb REGULAR_EXPRESSION src/ext/stb.*)
+
+add_library (lib STATIC
+  ${LIB_CORE}
+  ${LIB_EXT}
+  ${LIB_EXT_STB}
+)
+set(LIBS ${LIBS} lib)
+
+include_directories(src)
+include_directories(src/ext)
 
 macro(makeLink src dest target)
   add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}  DEPENDS  ${dest} COMMENT "mklink ${src} -> ${dest}")
@@ -65,12 +94,12 @@ endmacro()
 
 function(create_project_from_sources demo)
     file(GLOB SOURCE
-            "src/${demo}/*.h"
-            "src/${demo}/*.cpp"
-            "src/${demo}/*.vs"
-            "src/${demo}/*.fs"
-            "src/${demo}/*.gs"
-            "src/${demo}/*.cs"
+            "src/demos/${demo}/*.h"
+            "src/demos/${demo}/*.cpp"
+            "src/demos/${demo}/*.vs"
+            "src/demos/${demo}/*.fs"
+            "src/demos/${demo}/*.gs"
+            "src/demos/${demo}/*.cs"
   )
   set(NAME "${demo}")
   add_executable(${NAME} ${SOURCE})
@@ -80,11 +109,11 @@ function(create_project_from_sources demo)
   set_target_properties(${NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/${demo}")
   # copy shader files to build directory
   file(GLOB SHADERS
-      "src/${demo}/*.vs"
-      # "src/${demo}/*.frag"
-      "src/${demo}/*.fs"
-      "src/${demo}/*.gs"
-      "src/${demo}/*.cs"
+      "src/demos/${demo}/*.vs"
+      # "src/demos/${demo}/*.frag"
+      "src/demos/${demo}/*.fs"
+      "src/demos/${demo}/*.gs"
+      "src/demos/${demo}/*.cs"
   )
 	# copy dlls
 	file(GLOB DLLS "dlls/*.dll")
@@ -97,7 +126,5 @@ endfunction()
 
 # then create a project file per tutorial
 foreach(DEMO ${DEMOS})
-    create_project_from_sources(${DEMO})
+    create_project_from_sources(${DEMO_PATH} ${DEMO})
 endforeach(DEMO)
-
-include_directories(${CMAKE_SOURCE_DIR}/includes)
